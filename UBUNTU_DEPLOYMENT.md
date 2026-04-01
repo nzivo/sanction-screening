@@ -3,6 +3,7 @@
 ## Prerequisites Checklist
 
 Before starting, ensure you have:
+
 - [ ] Ubuntu server (20.04 LTS or higher)
 - [ ] Root or sudo access
 - [ ] Internet connection
@@ -53,7 +54,8 @@ node --version    # Should show v20.x.x
 npm --version     # Should show 10.x.x or higher
 ```
 
-**Expected output:** 
+**Expected output:**
+
 - Node: `v20.x.x`
 - npm: `10.x.x`
 
@@ -202,7 +204,8 @@ FUZZY_MATCH_THRESHOLD=80
 python init_db.py
 ```
 
-**Expected output:** 
+**Expected output:**
+
 ```
 Database initialized successfully!
 Tables created.
@@ -218,6 +221,7 @@ python main.py
 ```
 
 **Expected output:**
+
 ```
 INFO:     Started server process
 INFO:     Uvicorn running on http://0.0.0.0:8000
@@ -226,7 +230,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 **Test in another terminal:**
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 **Expected response:** `{"status":"healthy"}`
@@ -256,7 +260,8 @@ npm install
 npm run build
 ```
 
-**Expected output:** 
+**Expected output:**
+
 ```
 vite v5.x.x building for production...
 ✓ built in Xs
@@ -286,6 +291,8 @@ curl http://localhost
 
 ## Step 15: Configure Nginx for Your Application
 
+**Note:** This configuration uses **path-based routing** (`/sanctions`) to allow multiple services on the same server (port 80).
+
 ```bash
 # Create Nginx configuration
 sudo nano /etc/nginx/sites-available/sanctions-screening
@@ -294,40 +301,59 @@ sudo nano /etc/nginx/sites-available/sanctions-screening
 **Add this configuration:**
 
 ```nginx
+# Upstream backend for better performance
+upstream sanctions_backend {
+    server localhost:8001;
+}
+
 server {
     listen 80;
-    server_name your_server_ip;  # Replace with your actual IP or domain
+    server_name 134.209.176.80;  # Replace with your actual IP or domain
 
-    # Frontend - serve built React app
-    location / {
-        root /home/YOUR_USERNAME/sanction-screening/frontend/dist;
-        try_files $uri $uri/ /index.html;
+    # Sanctions Screening Frontend - accessible at /sanctions
+    location /sanctions {
+        alias /home/YOUR_USERNAME/sanction-screening/frontend/dist;
+        try_files $uri $uri/ /sanctions/index.html;
         index index.html;
     }
 
-    # Backend API - proxy to FastAPI
-    location /api/ {
-        proxy_pass http://localhost:8000/;
+    # Sanctions Backend API - accessible at /sanctions/api
+    location /sanctions/api/ {
+        rewrite ^/sanctions/api/(.*) /$1 break;
+        proxy_pass http://sanctions_backend;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
     }
 
-    # API Documentation
-    location /docs {
-        proxy_pass http://localhost:8000/docs;
+    # API Documentation - accessible at /sanctions/docs
+    location /sanctions/docs {
+        rewrite ^/sanctions/docs$ /docs break;
+        proxy_pass http://sanctions_backend;
         proxy_set_header Host $host;
     }
 
-    location /redoc {
-        proxy_pass http://localhost:8000/redoc;
+    location /sanctions/redoc {
+        rewrite ^/sanctions/redoc$ /redoc break;
+        proxy_pass http://sanctions_backend;
+        proxy_set_header Host $host;
+    }
+
+    location /sanctions/openapi.json {
+        rewrite ^/sanctions/openapi.json$ /openapi.json break;
+        proxy_pass http://sanctions_backend;
         proxy_set_header Host $host;
     }
 }
 ```
 
-**Important:** Replace `/home/YOUR_USERNAME/` with your actual username path.
+**Important:**
+
+- Replace `/home/YOUR_USERNAME/` with your actual username path
+- Replace `134.209.176.80` with your server IP or domain name
+- This allows you to run other services at `/cbk-gdi`, `/payment`, etc.
 
 ---
 
@@ -347,7 +373,8 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-**Expected output from nginx -t:** 
+**Expected output from nginx -t:**
+
 ```
 nginx: configuration file /etc/nginx/nginx.conf test is successful
 ```
@@ -417,9 +444,13 @@ sudo apt install ufw -y
 # Allow SSH (IMPORTANT - do this first!)
 sudo ufw allow 22/tcp
 
-# Allow HTTP and HTTPS
+# Allow HTTP on port 80 (standard port - path-based routing for multiple services)
 sudo ufw allow 80/tcp
+
+# Allow HTTPS (if you plan to add SSL later)
 sudo ufw allow 443/tcp
+
+# DO NOT open backend ports (8001, 8002, etc.) - they should only be accessible via Nginx proxy
 
 # Enable firewall
 sudo ufw enable
@@ -444,7 +475,7 @@ nano api.js
 **Ensure the base URL is correct:**
 
 ```javascript
-const API_BASE_URL = '/api';  // This works with Nginx proxy
+const API_BASE_URL = "/api"; // This works with Nginx proxy
 ```
 
 **If you made changes, rebuild:**
@@ -462,23 +493,24 @@ npm run build
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Or from outside
-curl http://your_server_ip/api/health
+curl http://134.209.176.80/sanctions/api/health
 ```
 
 ### Test Frontend:
 
 Open browser and visit:
-- `http://your_server_ip` - Should show the React dashboard
-- `http://your_server_ip/docs` - Should show API documentation
+
+- `http://134.209.176.80/sanctions` - Should show the React dashboard
+- `http://134.209.176.80/sanctions/docs` - Should show API documentation
 
 ---
 
 ## Step 22: Initialize Sanctions Lists (First Time)
 
-Access the dashboard at `http://your_server_ip` and:
+Access the dashboard at `http://134.209.176.80/sanctions` and:
 
 1. Go to **Lists Management** section
 2. Click "Update" buttons for each list:
@@ -571,6 +603,7 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 ```
 
 **Follow prompts:**
+
 - Enter email address
 - Agree to terms
 - Choose whether to redirect HTTP to HTTPS (recommended: Yes)
@@ -822,10 +855,17 @@ sudo systemctl reload nginx
 
 After completing all steps:
 
-- **Frontend Dashboard:** `http://your_server_ip`
-- **Backend API:** `http://your_server_ip/api`
-- **API Documentation:** `http://your_server_ip/docs`
-- **Alternative API Docs:** `http://your_server_ip/redoc`
+- **Frontend Dashboard:** `http://134.209.176.80/sanctions`
+- **Backend API:** `http://134.209.176.80/sanctions/api`
+- **API Documentation:** `http://134.209.176.80/sanctions/docs`
+- **Alternative API Docs:** `http://134.209.176.80/sanctions/redoc`
+
+**Note:** This path-based routing (`/sanctions`) allows you to run other services on the same server:
+
+- CBK GDI at `/cbk-gdi`
+- Payment Service at `/payment`
+
+See [MULTI_SERVICE_SETUP.md](MULTI_SERVICE_SETUP.md) for complete multi-service configuration.
 
 ---
 
@@ -834,18 +874,21 @@ After completing all steps:
 ### Issue 1: Backend won't start
 
 **Check logs:**
+
 ```bash
 sudo journalctl -u sanctions-backend -n 50
 ```
 
 **Common causes:**
+
 - Database connection error → Check .env file and PostgreSQL credentials
-- Port already in use → Kill process on port 8000: `sudo lsof -ti:8000 | xargs kill -9`
+- Port already in use → Kill process on port 8001: `sudo lsof -ti:8001 | xargs kill -9`
 - Missing dependencies → Reinstall: `pip install -r requirements.txt`
 
 ### Issue 2: Frontend shows blank page
 
 **Check:**
+
 - Nginx is running: `sudo systemctl status nginx`
 - Files exist: `ls -la /home/$USER/sanction-screening/frontend/dist`
 - Rebuild if needed: `cd frontend && npm run build`
@@ -853,30 +896,35 @@ sudo journalctl -u sanctions-backend -n 50
 ### Issue 3: API calls fail from frontend
 
 **Check Nginx proxy configuration:**
+
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
 **Check backend is running:**
+
 ```bash
 sudo systemctl status sanctions-backend
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 ### Issue 4: Database connection errors
 
 **Verify PostgreSQL is running:**
+
 ```bash
 sudo systemctl status postgresql
 ```
 
 **Test connection:**
+
 ```bash
 psql -U sanctions_user -d sanctions_db -h localhost -W
 ```
 
 **If login fails, reset password:**
+
 ```bash
 sudo -u postgres psql
 ALTER USER sanctions_user WITH PASSWORD 'NewPassword123!';
@@ -888,6 +936,7 @@ Then update `backend/.env` with new password.
 ### Issue 5: Permission denied errors
 
 **Fix ownership:**
+
 ```bash
 sudo chown -R $USER:$USER /home/$USER/sanction-screening
 chmod +x start.sh
@@ -920,6 +969,7 @@ Check these log files if something goes wrong:
 3. PostgreSQL logs: `sudo tail -f /var/log/postgresql/postgresql-*.log`
 
 Remember to keep your system updated:
+
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
