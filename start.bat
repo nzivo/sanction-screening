@@ -41,9 +41,9 @@ echo ==========================================
 echo   Startup Complete!
 echo ==========================================
 echo.
-echo Backend API:  http://localhost:8000
-echo API Docs:     http://localhost:8000/docs
-echo Frontend:     http://localhost:3000
+echo Backend API:  http://localhost:8001
+echo API Docs:     http://localhost:8001/docs
+echo Frontend:     http://localhost:3001
 echo.
 echo Press any key to exit (servers will keep running)...
 pause > nul

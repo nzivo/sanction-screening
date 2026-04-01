@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "/api";
+// Use /sanctions/api for production (path-based routing)
+// Use /api for local development (Vite proxy)
+const API_BASE_URL = import.meta.env.PROD ? "/sanctions/api" : "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,

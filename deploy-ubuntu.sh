@@ -261,41 +261,71 @@ if command -v nginx &> /dev/null; then
     
     if [[ $CREATE_NGINX =~ ^[Yy]$ ]]; then
         sudo tee $NGINX_CONF > /dev/null << EOF
+# Sanctions Screening Service Configuration
+# Access at: http://134.209.176.80/sanctions
+
+# Upstream backend
+upstream sanctions_backend {
+    server localhost:8001;
+}
+
 server {
     listen 80;
-    server_name _;
+    server_name 134.209.176.80;
 
-    # Frontend - serve built React app
-    location / {
-        root $SCRIPT_DIR/frontend/dist;
-        try_files \$uri \$uri/ /index.html;
+    # Sanctions Screening Frontend - accessible at /sanctions
+    location /sanctions {
+        alias $SCRIPT_DIR/frontend/dist;
+        try_files \$uri \$uri/ /sanctions/index.html;
         index index.html;
     }
 
-    # Backend API - proxy to FastAPI
-    location /api/ {
-        proxy_pass http://localhost:8000/;
+    # Sanctions Backend API - accessible at /sanctions/api
+    location /sanctions/api/ {
+        rewrite ^/sanctions/api/(.*) /\$1 break;
+        proxy_pass http://sanctions_backend;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_redirect off;
     }
 
-    # API Documentation
-    location /docs {
-        proxy_pass http://localhost:8000/docs;
+    # Sanctions API Documentation - accessible at /sanctions/docs
+    location /sanctions/docs {
+        rewrite ^/sanctions/docs\$ /docs break;
+        proxy_pass http://sanctions_backend;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+
+    location /sanctions/redoc {
+        rewrite ^/sanctions/redoc\$ /redoc break;
+        proxy_pass http://sanctions_backend;
         proxy_set_header Host \$host;
     }
 
-    location /redoc {
-        proxy_pass http://localhost:8000/redoc;
+    location /sanctions/openapi.json {
+        rewrite ^/sanctions/openapi.json\$ /openapi.json break;
+        proxy_pass http://sanctions_backend;
         proxy_set_header Host \$host;
     }
 
-    location /openapi.json {
-        proxy_pass http://localhost:8000/openapi.json;
-        proxy_set_header Host \$host;
-    }
+    # Add locations for your other services:
+    # 
+    # CBK GDI Service - accessible at /cbk-gdi
+    # location /cbk-gdi {
+    #     proxy_pass http://localhost:PORT_FOR_CBK;
+    #     proxy_set_header Host \$host;
+    #     proxy_set_header X-Real-IP \$remote_addr;
+    # }
+    #
+    # Payment Service - accessible at /payment
+    # location /payment {
+    #     proxy_pass http://localhost:PORT_FOR_PAYMENT;
+    #     proxy_set_header Host \$host;
+    #     proxy_set_header X-Real-IP \$remote_addr;
+    # }
 }
 EOF
         print_status "Nginx configuration created"
@@ -338,9 +368,13 @@ echo "=========================================="
 echo ""
 echo "Your application should now be accessible at:"
 echo ""
-echo "  Frontend:     http://$(hostname -I | awk '{print $1}')"
-echo "  API:          http://$(hostname -I | awk '{print $1}')/api"
-echo "  API Docs:     http://$(hostname -I | awk '{print $1}')/docs"
+echo "  Frontend:     http://134.209.176.80/sanctions"
+echo "  API:          http://134.209.176.80/sanctions/api"
+echo "  API Docs:     http://134.209.176.80/sanctions/docs"
+echo ""
+echo "Other services on this server:"
+echo "  CBK GDI:      http://134.209.176.80/cbk-gdi (configure separately)"
+echo "  Payment:      http://134.209.176.80/payment (configure separately)"
 echo ""
 echo "Useful commands:"
 echo "  View backend logs:    sudo journalctl -u sanctions-backend -f"
@@ -349,7 +383,7 @@ echo "  Stop backend:         sudo systemctl stop sanctions-backend"
 echo "  Reload Nginx:         sudo systemctl reload nginx"
 echo ""
 echo "Next steps:"
-echo "  1. Access the dashboard in your browser"
+echo "  1. Access the dashboard at http://134.209.176.80/sanctions"
 echo "  2. Go to 'Lists Management' and update sanctions lists"
 echo "  3. Upload PEP and World Bank data if needed"
 echo ""

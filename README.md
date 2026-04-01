@@ -71,9 +71,9 @@ python init_db.py
 python main.py
 ```
 
-Backend will run on `http://localhost:8000`
+Backend will run on `http://localhost:8001`
 
-API Documentation: `http://localhost:8000/docs`
+API Documentation: `http://localhost:8001/docs`
 
 ### Frontend Setup
 
@@ -88,7 +88,7 @@ npm install
 npm run dev
 ```
 
-Frontend will run on `http://localhost:3000`
+Frontend will run on `http://localhost:3001`
 
 ## Configuration
 
@@ -199,7 +199,7 @@ cd backend
 pip install -r requirements.txt
 
 # Run with uvicorn (production)
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn main:app --host 0.0.0.0 --port 8001 --workers 4
 ```
 
 ### Frontend
@@ -261,7 +261,7 @@ See LICENSE file for details.
 For issues and questions:
 
 - Review documentation in `backend/*.md` files
-- Check API docs at `http://localhost:8000/docs`
+- Check API docs at `http://localhost:8001/docs`
 - Refer to troubleshooting guide
 
 ## Version

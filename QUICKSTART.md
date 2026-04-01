@@ -52,8 +52,8 @@ start.bat
 
 This will:
 
-1. Start the backend API on `http://localhost:8000`
-2. Start the frontend dashboard on `http://localhost:3000`
+1. Start the backend API on `http://localhost:8001`
+2. Start the frontend dashboard on `http://localhost:3001`
 3. Open both in separate terminal windows
 
 ### Option 2: Manual Start
@@ -79,10 +79,10 @@ npm run dev
 
 Once running, you can access:
 
-- **Frontend Dashboard**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **API Alternative Docs**: http://localhost:8000/redoc
+- **Frontend Dashboard**: http://localhost:3001
+- **Backend API**: http://localhost:8001
+- **API Documentation**: http://localhost:8001/docs
+- **API Alternative Docs**: http://localhost:8001/redoc
 
 ## 📱 Dashboard Features
 
@@ -152,7 +152,7 @@ DATABASE_URL=postgresql://user:password@localhost/sanctions_db
 
 ```bash
 # Update all sanctions lists
-curl -X POST http://localhost:8000/lists/update/all
+curl -X POST http://localhost:8001/lists/update/all
 ```
 
 ### Frontend Setup
@@ -164,7 +164,7 @@ No additional setup needed! Dependencies install automatically on first run.
 ### Screen a Name
 
 ```bash
-curl -X POST "http://localhost:8000/screen" \
+curl -X POST "http://localhost:8001/screen" \
   -H "Content-Type: application/json" \
   -d '{
     "full_name": "John Doe",
@@ -175,19 +175,19 @@ curl -X POST "http://localhost:8000/screen" \
 ### Update OFAC List
 
 ```bash
-curl -X POST "http://localhost:8000/lists/update/OFAC?force=true"
+curl -X POST "http://localhost:8001/lists/update/OFAC?force=true"
 ```
 
 ### Check All Lists Status
 
 ```bash
-curl "http://localhost:8000/lists/check-updates"
+curl "http://localhost:8001/lists/check-updates"
 ```
 
 ### Search PEP
 
 ```bash
-curl "http://localhost:8000/pep/search?name=John&limit=10"
+curl "http://localhost:8001/pep/search?name=John&limit=10"
 ```
 
 ## 🎨 Dashboard Screenshots
@@ -253,7 +253,7 @@ npm run dev
 
 ### CORS errors
 
-Make sure backend CORS is configured for `http://localhost:3000`
+Make sure backend CORS is configured for `http://localhost:3001`
 
 ## 🚀 Production Deployment
 
@@ -262,7 +262,7 @@ Make sure backend CORS is configured for `http://localhost:3000`
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn main:app --host 0.0.0.0 --port 8001 --workers 4
 ```
 
 ### Frontend
