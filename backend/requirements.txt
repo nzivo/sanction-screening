@@ -1,0 +1,30 @@
+# FastAPI Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+pydantic-settings==2.7.1
+
+# Database
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# Fuzzy Matching
+rapidfuzz==3.11.0
+
+# HTTP Requests
+requests==2.32.3
+httpx==0.28.1
+
+# Environment
+python-dotenv==1.0.1
+
+# XML Parsing (built-in, but list for reference)
+# xml.etree.ElementTree is built-in
+
+# Optional: Additional tools
+python-multipart==0.0.20
+
+# Excel file handling
+pandas==3.0.1
+openpyxl==3.1.5
